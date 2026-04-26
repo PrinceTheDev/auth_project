@@ -27,15 +27,13 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS')
+ALLOWED_HOSTS = ["*"]
+
+AUTH_USER_MODEL = 'authentication.User'
 
 # Application definition
 
-INSTALLED_APPS = [
-    'api.authentication',
-    'api.accounts',
-    'api.mail',
-    'rest_framework',
+COMMON_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,7 +42,25 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+THIRD_PARTY_APPS = [
+    'rest_framework',
+    'corsheaders',
+    'django_ratelimit',
+    'oauth2_provider',
+    'djoser',
+    'social_django',
+]
+
+LOCAL_APPS = [
+    'api.authentication',
+    'api.accounts',
+    'api.mail',
+]
+
+INSTALLED_APPS = COMMON_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
 MIDDLEWARE = [
+    'corsheaders.Middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -55,15 +71,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_COOKIE_NAME = "csrftoken"  # This ensures the CSRF token is properly set in cookies
-CSRF_COOKIE_HTTPONLY = False  # Ensure this is not blocking CSRF cookie access
+CORS_ALLOW_ALL_ORIGINS = True
 
-CSRF_TRUSTED_ORIGINS = [
-    '*',
-]
-
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
 
 ROOT_URLCONF = 'controller.urls'
 
@@ -146,12 +155,18 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# # Email Backend Settings
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'novacresthospital1@gmail.com'
-# EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+CACHES = {
+    "default": {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'IGNORE_EXCEPTIONS': True,
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+            }
+        },
+        'TIMEOUT': 300,
+        'KEY_PREFIX': 'auth_system,'
+    }
+}
